@@ -1,0 +1,10 @@
+{
+  "name": "gpu-card-calculator",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "GPU卡数计算器 — 公式模块与测试",
+  "scripts": {
+    "test": "node --test calculator/index.test.js"
+  },
+  "private": true
+}
