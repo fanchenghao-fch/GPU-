@@ -73,14 +73,144 @@ GPU 卡数计算器是一个轻量级 Web 工具，面向销售人员快速估�
 
 ## 四、计算引擎能力
 
-### 4.1 GPU 产品（2 款）
+### 4.1 计算公式
+
+来源：`calculator/formulas/gpu-memory.js` + `calculator/formulas/model-memory.js`
+
+核心链路：
+
+```
+标称显存 → 驱动可见 → GPU 可用显存
+                              ↓
+模型参数 × 精度 → 权重显存 ──→ 模型总显存 → 卡数
+                    KV Cache ──→
+                    其他显存 ──→
+```
+
+---
+
+#### 4.1.1 GPU 显存计算链（gpu-memory.js）
+
+**第一层 — 驱动可见显存：**
+
+`driverVisible = nominalGB × driverEfficiency`
+
+- 标称显存扣除 ECC 预留、GPU 固件、显存位宽损耗（约 3%）
+- driverEfficiency 典型值 = 0.97
+
+**第二层 — 模型可用显存：**
+
+`usable = driverVisible × inferenceRatio`
+
+- 扣除 CUDA Context / 驱动运行时开销（kernel launch、cuDNN/cuBLAS 内部缓存）
+- 推理场景 inferenceRatio 典型值 = 0.85–0.90
+
+**第三层 — 一步计算（calcGPUUsableMemory）：**
+
+`usable = nominalGB × driverEfficiency × inferenceRatio`
+
+- 合并系数 = driverEfficiency × inferenceRatio（典型值 0.97 × 0.90 = 0.873）
+- N300: `48 × 0.873 = 41.90 GB`
+- C600: `144 × 0.873 = 125.71 GB`
+
+> ⚠️ GPU 侧开销（此处 10–15%）与模型侧"其他显存"是**独立的两块**：
+> - GPU 侧 → CUDA context / 驱动运行时（固定开销，不随模型变化）
+> - 模型侧 → 激活值 / 临时缓冲区（随模型和 batch 变化，见 4.1.4）
+
+---
+
+#### 4.1.2 模型权重显存（calcWeightMemory）
+
+`weightGB = paramsB × 10^9 × bytesPerParam / 1024^3`
+
+- paramsB = 模型总参数量（B = 十亿），**MoE 按全量专家计算**
+- bytesPerParam 由精度决定（详见 4.4 精度表）
+- 例：DeepSeek-R1-Distill-Llama-70B（70.6B）@ FP16
+  → `70.6 × 10^9 × 2 / 1024^3 ≈ 131.5 GB`
+
+---
+
+#### 4.1.3 KV Cache 显存（calcKVCache）
+
+统一换算：
+
+`kvCacheGB = elements × bytesPerKV / 1024^3`
+
+- bytesPerKV 默认与权重精度一致（当前版本不分离指定 KV 精度）
+- elements 按 `attnArch` 分支计算：
+
+| 架构 | elements 公式 | 说明 |
+|------|-------------|------|
+| **standard** | `2 × numLayers × numKVHeads × headDim × ctx × batch` | ×2 覆盖 K 和 V；GQA 模型 kvDim < hiddenDim |
+| **mla** | `numLayers × (kvLoraRank + qkRopeHeadDim) × ctx × batch` | 无 ×2，K/V 压缩为联合隐向量 |
+| **cla** | `2 × (numLayers / claShareFactor) × numKVHeads × headDim × ctx × batch` | 每 claShareFactor 层共享一份 KV Cache |
+| **linear_hybrid** | `2 × fullAttnLayers × numKVHeads × headDim × ctx × batch` | 仅全注意力层产生 KV Cache；M2.5 全 Lightning 层(fullAttnLayers=0)，KV Cache=0 |
+| **kda_mla** | `fullAttnLayers × (kvLoraRank + qkRopeHeadDim) × ctx × batch` | KDA 层无 KV Cache |
+| **hca_mla** | `effectiveKVDim × ctx × batch` | 逐层不等压缩比，使用预计算等效 KV 维度 |
+
+计算示例：
+
+- **standard** — R1-Distill-Llama-70B @ FP16, ctx=8192, batch=1  
+  kvDim = 8 × 128 = 1024  
+  elements = `2 × 80 × 1024 × 8192 × 1 = 1,342,177,280`  
+  kvCache = `1,342,177,280 × 2 / 1024^3 ≈ 2.50 GB`
+
+- **mla** — DeepSeek-V3.2 @ FP16, ctx=8192, batch=1  
+  mlaDim = 512 + 64 = 576  
+  elements = `61 × 576 × 8192 × 1 = 287,670,272`  
+  kvCache = `287,670,272 × 2 / 1024^3 ≈ 0.54 GB`
+
+- **hca_mla** — DeepSeek V4 Flash @ FP16, ctx=8192, batch=1  
+  elements = `4176 × 8192 × 1 = 34,209,792`  
+  kvCache = `34,209,792 × 2 / 1024^3 ≈ 0.064 GB`
+
+---
+
+#### 4.1.4 其他显存（calcOtherMemory）
+
+`otherGB = (weightGB + kvCacheGB) × overheadRatio`
+
+- 包含：激活值临时缓存 + 算子缓冲区 + 内存分配器碎片
+- 推理场景默认 overheadRatio = 0.10（vLLM/TensorRT-LLM 实测 5–15%）
+- 各 SLA 预设使用不同 overheadRatio（见 4.5）
+
+---
+
+#### 4.1.5 模型总显存（calcModelMemory）
+
+`totalGB = round2(weightGB) + round2(kvCacheGB) + round2(otherGB)`
+
+- 先各自 round2（保留 2 位小数），再求和 — 确保前端展示明细可加得上
+- 例：R1-Distill-Llama-70B @ FP16, ctx=8192, batch=1, overhead=0.10  
+  weight = 131.50 GB  
+  kvCache = 2.50 GB  
+  other = (131.50 + 2.50) × 0.10 = 13.40 GB  
+  total = 131.50 + 2.50 + 13.40 = **147.40 GB**
+
+---
+
+#### 4.1.6 最终卡数（calculate）
+
+```
+cards       = ceil(totalGB / singleGPUUsableGB)
+servers     = ceil(cards / cardsPerServer)
+utilization = totalGB / (cards × singleGPUUsableGB)
+```
+
+- singleGPUUsableGB 来自 4.1.1 GPU 显存计算链
+- cardsPerServer 来自 GPU 产品配置（N300=16, C600=8）
+- 例：147.40 GB ÷ 41.90 GB = 3.52 → ceil = **4 张 N300**，1 台服务器，利用率 88.0%
+
+---
+
+### 4.2 GPU 产品（2 款）
 
 | ID | 名称 | 标称显存 | 单台卡数 | 驱动效率 | 推理可用率 | 单卡可用 |
 |----|------|----------|----------|----------|------------|----------|
 | n300 | N300 | 48 GB | 16 | 0.97 | 0.90 | 41.90 GB |
 | c600 | C600 | 144 GB | 8 | 0.97 | 0.90 | 125.71 GB |
 
-### 4.2 模型库（30 个）
+### 4.3 模型库（30 个）
 
 按注意力架构分类：
 
@@ -93,17 +223,6 @@ GPU 卡数计算器是一个轻量级 Web 工具，面向销售人员快速估�
 | hca_mla (HCA + MLA) | 2 | DeepSeek V4 Flash, V4 Pro |
 
 覆盖参数量范围：0.8B（Qwen3.5-0.8B）→ 2.8T（Kimi K3），含 Dense 和 MoE 两种参数架构。
-
-### 4.3 KV Cache 公式（6 种）
-
-| 架构 | 公式 | 说明 |
-|------|------|------|
-| standard | `2 × L × kvDim × ctx × batch × dtype` | ×2 覆盖 K 和 V |
-| mla | `L × (kvLoraRank+qkRopeHeadDim) × ctx × batch × dtype` | 无 ×2，K/V 压缩为联合隐向量 |
-| cla | `2 × (L/shareFactor) × kvDim × ctx × batch × dtype` | 跨层共享 KV Cache |
-| linear_hybrid | `2 × fullAttnLayers × kvDim × ctx × batch × dtype` | 仅全注意力层产生 KV Cache；M2.5 全 Lightning 层(fullAttnLayers=0)，KV Cache=0 |
-| kda_mla | `fullAttnLayers × (kvLoraRank+qkRopeHeadDim) × ctx × batch × dtype` | KDA 层无 KV Cache |
-| hca_mla | `effectiveKVDim × ctx × batch × dtype` | 逐层不等压缩比 |
 
 ### 4.4 精度（7 种）
 
