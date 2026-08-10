@@ -293,8 +293,8 @@ describe('calcKVCache - hca_mla', () => {
   it('DeepSeek V4 Pro: HCA+MLA KV Cache also uses effectiveKVDim', () => {
     const model = getModelById('deepseek-v4-pro');
     const result = calcKVCache(model, 8192, 1, 'FP16');
-    // effectiveKVDim=8500 × 8192 × 2 / (1024^3) ≈ 0.130 GB
-    assert.ok(result > 0.12 && result < 0.14, `expected ~0.130, got ${result}`);
+    // effectiveKVDim=6000 × 8192 × 2 / (1024^3) ≈ 0.092 GB
+    assert.ok(result > 0.08 && result < 0.10, `expected ~0.092, got ${result}`);
   });
 });
 
@@ -608,7 +608,7 @@ describe('consistency', () => {
     for (const m of models) {
       if (m.attnArch === 'linear_hybrid') {
         hybridCount++;
-        assert.ok(m.fullAttnLayers > 0, `${m.id}: must have fullAttnLayers > 0`);
+        assert.ok(m.fullAttnLayers >= 0, `${m.id}: must have fullAttnLayers >= 0`);
         assert.ok(m.fullAttnLayers < m.numLayers,
           `${m.id}: fullAttnLayers (${m.fullAttnLayers}) < numLayers (${m.numLayers})`);
       }

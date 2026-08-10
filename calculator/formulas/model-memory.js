@@ -58,7 +58,8 @@ export function calcWeightMemory(paramsB, precision) {
  *
  *   linear_hybrid: KV Cache = 2 × fullAttnLayers × kvDim × contextLen × batchSize × bytesPerKV
  *     - 仅 full-attention 层产生 KV Cache，线性注意力层使用固定大小状态（不随 ctx 增长）
- *     - 适用于 MiniMax-M1（Lightning Attention）、Qwen3.6-27B（Linear Attention 混合）
+ *     - 适用于 MiniMax-M1/M3（Lightning/MSA 混合）、Qwen3.5/3.6（Gated DeltaNet 混合）
+ *     - 特例：MiniMax-M2.5 全 Lightning 层(fullAttnLayers=0)，KV Cache=0
  *
  *   kda_mla:  KV Cache = fullAttnLayers × (kvLoraRank + qkRopeHeadDim) × contextLen × batchSize × bytesPerKV
  *     - KDA（Kimi Dynamic Attention）层无 KV Cache，Gated MLA 层使用压缩 KV
