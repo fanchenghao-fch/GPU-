@@ -1,7 +1,7 @@
 /**
  * SLA 预设 —— 推理/训练场景的默认参数
  *
- * 这些预设档位由产品部结合业内共识定义。
+ * 推理预设依据《本地部署大模型服务等级（SLA）》定义。
  * 销售只需选择档位，无需手动调上下文长度、并发数等参数。
  *
  * 每个预设包含：
@@ -16,49 +16,49 @@
 
 export const SLA_PRESETS = [
   {
-    id: 'inference-light',
-    displayName: '轻量推理',
-    description: '个人使用 / 低并发，上下文 4K',
-    scenario: 'inference',
-    contextLen: 4096,
-    batchSize: 1,
-    overheadRatio: 0.05,
-  },
-  {
-    id: 'inference-standard',
-    displayName: '标准推理',
-    description: '企业应用 / 中等负载，上下文 8K',
+    id: 'sla-1',
+    displayName: 'SLA-1 实时交互型',
+    description: '产品问答/销售话术/简单查询，8K 上下文 × 20 并发',
     scenario: 'inference',
     contextLen: 8192,
-    batchSize: 1,
-    overheadRatio: 0.10,
+    batchSize: 20,
+    overheadRatio: 0.15,
   },
   {
-    id: 'inference-batch',
-    displayName: '批量推理',
-    description: '离线评估 / API 高并发，上下文 8K，并发 8',
+    id: 'sla-2',
+    displayName: 'SLA-2 标准业务型',
+    description: '多轮对话/客户画像/CRM 分析，16K 上下文 × 20 并发',
     scenario: 'inference',
-    contextLen: 8192,
-    batchSize: 8,
-    overheadRatio: 0.12,
+    contextLen: 16384,
+    batchSize: 20,
+    overheadRatio: 0.15,
   },
   {
-    id: 'inference-long',
-    displayName: '长上下文推理',
-    description: 'RAG / 文档分析 / 法律合同，上下文 128K',
+    id: 'sla-3',
+    displayName: 'SLA-3 深度业务型',
+    description: '客户全景分析/复杂方案/多资料问答，32K 上下文 × 20 并发',
+    scenario: 'inference',
+    contextLen: 32768,
+    batchSize: 20,
+    overheadRatio: 0.15,
+  },
+  {
+    id: 'sla-4',
+    displayName: 'SLA-4 长文档分析型',
+    description: '会议纪要/合同/方案/标书分析，64K 上下文 × 20 并发',
+    scenario: 'inference',
+    contextLen: 65536,
+    batchSize: 20,
+    overheadRatio: 0.15,
+  },
+  {
+    id: 'sla-5',
+    displayName: 'SLA-5 超长文档分析型',
+    description: '整份标书/合同集/长录音转写/多文档联合，128K 上下文 × 20 并发',
     scenario: 'inference',
     contextLen: 131072,
-    batchSize: 1,
-    overheadRatio: 0.12,
-  },
-  {
-    id: 'inference-xlong',
-    displayName: '超长上下文推理',
-    description: '全量代码库 / 整书分析 / 海量对话，上下文 256K',
-    scenario: 'inference',
-    contextLen: 262144,
-    batchSize: 1,
-    overheadRatio: 0.12,
+    batchSize: 20,
+    overheadRatio: 0.15,
   },
   {
     id: 'training-lora',

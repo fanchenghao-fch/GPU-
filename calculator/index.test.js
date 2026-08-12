@@ -353,29 +353,29 @@ describe('calcModelMemory (combined)', () => {
 // 端到端：calculate() — Standard 模型
 // ──────────────────────────────────────────────
 describe('calculate — standard models', () => {
-  it('R1-Distill-Llama-70B + N300 + 标准推理 + FP16 → 4 cards', () => {
-    const result = calculate('deepseek-r1-distill-llama-70b', 'n300', 'inference-standard', 'FP16');
-    // 模型 ~147.4 GB / 单卡 ~41.90 GB = 3.52 → ceil = 4
-    assert.equal(result.cards, 4, `expected 4 cards, got ${result.cards}\n${result.formula}`);
+  it('R1-Distill-Llama-70B + N300 + SLA-1 + FP16 → 5 cards', () => {
+    const result = calculate('deepseek-r1-distill-llama-70b', 'n300', 'sla-1', 'FP16');
+    // 模型 ~208.7 GB (batch=20) / 单卡 ~41.90 GB = 4.98 → ceil = 5
+    assert.equal(result.cards, 5, `expected 5 cards, got ${result.cards}\n${result.formula}`);
     assert.equal(result.servers, 1, `expected 1 server, got ${result.servers}`);
     assert.equal(result.modelName, 'DeepSeek-R1-Distill-Llama-70B（70B）');
   });
 
   it('R1-Distill-Llama-8B + N300 + 轻量推理 + INT8 → 1 card', () => {
-    const result = calculate('deepseek-r1-distill-llama-8b', 'n300', 'inference-light', 'INT8');
+    const result = calculate('deepseek-r1-distill-llama-8b', 'n300', 'sla-1', 'INT8');
     // ~8 GB / 41.90 GB = 0.19 → ceil = 1
     assert.equal(result.cards, 1, `expected 1 card, got ${result.cards}\n${result.formula}`);
   });
 
   it('Qwen3.6-27B + C600 + 标准推理 + FP16 → 1 card (55.9 GB fits on 125.7 GB)', () => {
-    const result = calculate('qwen3.6-27b', 'c600', 'inference-standard', 'FP16');
+    const result = calculate('qwen3.6-27b', 'c600', 'sla-1', 'FP16');
     // weight=50.3, kv=0.5, other=5.1 → total≈55.9, usable=125.7 → 1 card
     assert.equal(result.cards, 1, `expected 1 card, got ${result.cards}\n${result.formula}`);
     assert.equal(result.servers, 1);
   });
 
   it('GLM-4.5 (standard MoE) + N300 + 标准推理 + FP16 → ~18 cards', () => {
-    const result = calculate('glm-4.5', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('glm-4.5', 'n300', 'sla-1', 'FP16');
     // weight=661, kv=2.9, other=66.4 → total≈730, /41.9≈17.4 → ceil=18
     assert.equal(result.architecture, 'moe');
     assert.ok(result.cards >= 16 && result.cards <= 20,
@@ -383,7 +383,7 @@ describe('calculate — standard models', () => {
   });
 
   it('Hunyuan-A13B + N300 + 轻量推理 + INT8 → 1-2 cards', () => {
-    const result = calculate('hunyuan-a13b', 'n300', 'inference-light', 'INT8');
+    const result = calculate('hunyuan-a13b', 'n300', 'sla-1', 'INT8');
     assert.ok(result.cards >= 1 && result.cards <= 3,
       `expected ~2 cards, got ${result.cards}\n${result.formula}`);
     assert.equal(result.architecture, 'moe');
@@ -395,7 +395,7 @@ describe('calculate — standard models', () => {
 // ──────────────────────────────────────────────
 describe('calculate — MLA models', () => {
   it('DeepSeek-V3.2 + N300 + 标准推理 + FP16 → ~33 cards (MLA)', () => {
-    const result = calculate('deepseek-v3.2', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('deepseek-v3.2', 'n300', 'sla-1', 'FP16');
     // weight=1250, kv=0.54, other=125 → total≈1375, /41.9≈32.8 → ceil=33
     assert.ok(result.cards >= 30 && result.cards <= 36,
       `expected ~33 cards, got ${result.cards}\n${result.formula}`);
@@ -404,7 +404,7 @@ describe('calculate — MLA models', () => {
   });
 
   it('DeepSeek-V3.2 + N300 + 轻量推理 + FP16 → ~12 cards', () => {
-    const result = calculate('deepseek-v3.2', 'n300', 'inference-light', 'FP16');
+    const result = calculate('deepseek-v3.2', 'n300', 'sla-1', 'FP16');
     // weight=1250, kv=0.27, other≈62.5 → total≈1312.5, /41.9≈31.3 → ceil=32
     // Actually lighter overhead (0.05): other ≈ (1250+0.27)*0.05 = 62.51
     // total = 1250 + 0.27 + 62.51 = 1312.78... that doesn't change much
@@ -415,7 +415,7 @@ describe('calculate — MLA models', () => {
   });
 
   it('GLM-5.2 + N300 + 标准推理 + FP16 → ~37 cards (MLA)', () => {
-    const result = calculate('glm-5.2', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('glm-5.2', 'n300', 'sla-1', 'FP16');
     // weight=1385.7 (744B), kv=0.69, other=138.6 → total≈1525, /41.9≈36.4 → ceil=37
     assert.ok(result.cards >= 34 && result.cards <= 40,
       `expected ~37 cards, got ${result.cards}\n${result.formula}`);
@@ -424,7 +424,7 @@ describe('calculate — MLA models', () => {
   });
 
   it('GLM-5.1 (MLA) + N300 + 标准推理 + FP16 → similar to GLM-5.2', () => {
-    const result = calculate('glm-5.1', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('glm-5.1', 'n300', 'sla-1', 'FP16');
     assert.ok(result.cards >= 34 && result.cards <= 40,
       `expected ~37 cards, got ${result.cards}\n${result.formula}`);
     assert.ok(result.formula.includes('mla'));
@@ -436,7 +436,7 @@ describe('calculate — MLA models', () => {
 // ──────────────────────────────────────────────
 describe('calculate — HCA+MLA models', () => {
   it('DeepSeek V4 Flash + N300 + 标准推理 + FP16 → ~14 cards (HCA)', () => {
-    const result = calculate('deepseek-v4-flash', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('deepseek-v4-flash', 'n300', 'sla-1', 'FP16');
     // weight=529, kv=0.06, other=52.9 → total≈582, /41.9≈13.9 → ceil=14
     assert.ok(result.cards >= 12 && result.cards <= 16,
       `expected ~14 cards, got ${result.cards}\n${result.formula}`);
@@ -444,7 +444,7 @@ describe('calculate — HCA+MLA models', () => {
   });
 
   it('DeepSeek V4 Pro + N300 + 标准推理 + FP16 → many cards (large HCA)', () => {
-    const result = calculate('deepseek-v4-pro', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('deepseek-v4-pro', 'n300', 'sla-1', 'FP16');
     // weight=685B = 1275.8GB, kv≈0.13, other≈127.6 → total≈1403.5, /41.9≈33.5 → ceil=34
     assert.ok(result.cards >= 30 && result.cards <= 40,
       `expected ~34 cards, got ${result.cards}\n${result.formula}`);
@@ -457,7 +457,7 @@ describe('calculate — HCA+MLA models', () => {
 // ──────────────────────────────────────────────
 describe('calculate — linear_hybrid models', () => {
   it('MiniMax-M1 + C600 + 标准推理 + FP16 → ~8 cards', () => {
-    const result = calculate('minimax-m1', 'c600', 'inference-standard', 'FP16');
+    const result = calculate('minimax-m1', 'c600', 'sla-1', 'FP16');
     // weight=849, kv=0.31, other=85.0 → total≈934.6, /125.7≈7.43 → ceil=8
     assert.ok(result.cards >= 6 && result.cards <= 10,
       `expected ~8 cards, got ${result.cards}\n${result.formula}`);
@@ -465,13 +465,13 @@ describe('calculate — linear_hybrid models', () => {
   });
 
   it('Qwen3.6-27B + N300 + 轻量推理 + INT8 → 1 card (dense hybrid)', () => {
-    const result = calculate('qwen3.6-27b', 'n300', 'inference-light', 'INT8');
+    const result = calculate('qwen3.6-27b', 'n300', 'sla-1', 'INT8');
     assert.equal(result.architecture, 'dense');
     assert.ok(result.cards >= 1, `expected at least 1 card, got ${result.cards}`);
   });
 
   it('Qwen3.6-35B-A3B (MoE hybrid) + N300 + 标准推理 + FP16 → ~2 cards', () => {
-    const result = calculate('qwen3.6-35b-a3b', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('qwen3.6-35b-a3b', 'n300', 'sla-1', 'FP16');
     // weight=65.2, kv=0.16, other=6.5 → total≈71.9, /41.9≈1.72 → ceil=2
     assert.ok(result.cards >= 1 && result.cards <= 3,
       `expected ~2 cards, got ${result.cards}\n${result.formula}`);
@@ -479,7 +479,7 @@ describe('calculate — linear_hybrid models', () => {
   });
 
   it('Qwen3.5-0.8B + N300 + 标准推理 + FP16 → 1 card (smallest hybrid)', () => {
-    const result = calculate('qwen3.5-0.8b', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('qwen3.5-0.8b', 'n300', 'sla-1', 'FP16');
     // weight=1.5, kv=0.09, other=0.16 → total≈1.74 → 1 card
     assert.equal(result.cards, 1, `expected 1 card, got ${result.cards}`);
   });
@@ -490,7 +490,7 @@ describe('calculate — linear_hybrid models', () => {
 // ──────────────────────────────────────────────
 describe('calculate — kda_mla models', () => {
   it('Kimi K3 + C600 + 标准推理 + FP16 → ~46 cards', () => {
-    const result = calculate('kimi-k3', 'c600', 'inference-standard', 'FP16');
+    const result = calculate('kimi-k3', 'c600', 'sla-1', 'FP16');
     // weight=5214.7, kv=0.21, other=521.5 → total≈5736.4, /125.7≈45.6 → ceil=46
     assert.ok(result.cards >= 42 && result.cards <= 50,
       `expected ~46 cards, got ${result.cards}\n${result.formula}`);
@@ -503,7 +503,7 @@ describe('calculate — kda_mla models', () => {
 // ──────────────────────────────────────────────
 describe('calculate — Tencent Hunyuan', () => {
   it('Hunyuan-Hy3 + N300 + 标准推理 + FP16 → ~15 cards', () => {
-    const result = calculate('hy3', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('hy3', 'n300', 'sla-1', 'FP16');
     // weight=549.5, kv=2.5, other=55.2 → total≈607.2, /41.9≈14.5 → ceil=15
     assert.ok(result.cards >= 13 && result.cards <= 17,
       `expected ~15 cards, got ${result.cards}\n${result.formula}`);
@@ -516,25 +516,25 @@ describe('calculate — Tencent Hunyuan', () => {
 // ──────────────────────────────────────────────
 describe('edge cases', () => {
   it('smallest model + biggest GPU → 1 card', () => {
-    const result = calculate('qwen3.5-0.8b', 'c600', 'inference-light', 'INT4');
+    const result = calculate('qwen3.5-0.8b', 'c600', 'sla-1', 'INT4');
     assert.equal(result.cards, 1);
   });
 
   it('largest model + smallest GPU → many cards', () => {
-    const result = calculate('kimi-k3', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('kimi-k3', 'n300', 'sla-1', 'FP16');
     // 2.8T params → ~5000+ GB, N300 = 41.9 GB → ~120+ cards
     assert.ok(result.cards >= 100, `expected >= 100 cards, got ${result.cards}`);
   });
 
   it('servers: cards/16 → correct server count', () => {
-    const result = calculate('kimi-k3', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('kimi-k3', 'n300', 'sla-1', 'FP16');
     const { cards, servers } = result;
     assert.equal(servers, Math.ceil(cards / 16),
       `servers should be ceil(cards/16), got ${servers} for ${cards} cards`);
   });
 
   it('utilization should be ≤ 1.0', () => {
-    const result = calculate('deepseek-r1-distill-llama-70b', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('deepseek-r1-distill-llama-70b', 'n300', 'sla-1', 'FP16');
     assert.ok(result.utilization <= 1.0, `utilization should be ≤ 1.0, got ${result.utilization}`);
     assert.ok(result.utilization > 0, `utilization should be > 0`);
   });
@@ -686,8 +686,7 @@ describe('SLA presets', () => {
   });
 
   const presetIds = [
-    'inference-light', 'inference-standard', 'inference-batch',
-    'inference-long', 'inference-xlong',
+    'sla-1', 'sla-2', 'sla-3', 'sla-4', 'sla-5',
     'training-lora', 'training-full',
   ];
   for (const id of presetIds) {
@@ -704,21 +703,25 @@ describe('SLA presets', () => {
     assert.throws(() => getPresetById('nonexistent'), /未知 SLA 预设/);
   });
 
-  it('context lengths: light(4K) < standard(8K) < long(128K) < xlong(256K)', () => {
-    const light = getPresetById('inference-light').contextLen;
-    const standard = getPresetById('inference-standard').contextLen;
-    const long = getPresetById('inference-long').contextLen;
-    const xlong = getPresetById('inference-xlong').contextLen;
-    assert.ok(light < standard);
-    assert.ok(standard < long);
-    assert.ok(long < xlong);
+  it('context lengths: sla-1(8K) < sla-2(16K) < sla-3(32K) < sla-4(64K) < sla-5(128K)', () => {
+    const s1 = getPresetById('sla-1').contextLen;
+    const s2 = getPresetById('sla-2').contextLen;
+    const s3 = getPresetById('sla-3').contextLen;
+    const s4 = getPresetById('sla-4').contextLen;
+    const s5 = getPresetById('sla-5').contextLen;
+    assert.ok(s1 < s2);
+    assert.ok(s2 < s3);
+    assert.ok(s3 < s4);
+    assert.ok(s4 < s5);
   });
 
-  it('batch preset has batchSize=8 > standard batchSize=1', () => {
-    const batch = getPresetById('inference-batch');
-    const standard = getPresetById('inference-standard');
-    assert.equal(batch.contextLen, standard.contextLen);
-    assert.ok(batch.batchSize > standard.batchSize);
+  it('all SLA inference presets have batchSize=20, training presets have batchSize=1', () => {
+    for (let i = 1; i <= 5; i++) {
+      const p = getPresetById(`sla-${i}`);
+      assert.equal(p.batchSize, 20, `sla-${i}: batchSize should be 20, got ${p.batchSize}`);
+    }
+    assert.equal(getPresetById('training-lora').batchSize, 1);
+    assert.equal(getPresetById('training-full').batchSize, 1);
   });
 });
 
@@ -727,14 +730,14 @@ describe('SLA presets', () => {
 // ──────────────────────────────────────────────
 describe('calculate with long-context presets', () => {
   it('R1-Distill-Llama-8B + N300 + 批量推理 (batch=8) → cards ≥ standard (batch=1)', () => {
-    const batchResult = calculate('deepseek-r1-distill-llama-8b', 'n300', 'inference-batch', 'FP16');
-    const stdResult = calculate('deepseek-r1-distill-llama-8b', 'n300', 'inference-standard', 'FP16');
+    const batchResult = calculate('deepseek-r1-distill-llama-8b', 'n300', 'sla-1', 'FP16');
+    const stdResult = calculate('deepseek-r1-distill-llama-8b', 'n300', 'sla-1', 'FP16');
     assert.ok(batchResult.cards >= stdResult.cards,
       `batch cards=${batchResult.cards} should be >= standard cards=${stdResult.cards}`);
   });
 
   it('R1-Distill-Llama-8B + N300 + 长上下文 128K → KV Cache dominates weight', () => {
-    const result = calculate('deepseek-r1-distill-llama-8b', 'n300', 'inference-long', 'FP16');
+    const result = calculate('deepseek-r1-distill-llama-8b', 'n300', 'sla-5', 'FP16');
     // ctx=128K: KV=2×32×1024×131072×2/(1024^3)≈16 GB > weight≈15 GB
     assert.ok(result.cards >= 1, `expected ≥1 card, got ${result.cards}`);
     assert.ok(result.modelMemoryGB.kvCacheGB > result.modelMemoryGB.weightGB,
@@ -742,19 +745,19 @@ describe('calculate with long-context presets', () => {
   });
 
   it('Qwen3.6-27B (linear_hybrid) + C600 + 长上下文 128K → only 16/64 layers produce KV cache', () => {
-    const result = calculate('qwen3.6-27b', 'c600', 'inference-long', 'FP16');
+    const result = calculate('qwen3.6-27b', 'c600', 'sla-5', 'FP16');
     assert.ok(result.formula.includes('linear_hybrid'));
     assert.ok(result.cards >= 1);
   });
 
   it('DeepSeek-V3.2 + C600 + 超长上下文 256K → MLA keeps KV cache manageable', () => {
-    const result = calculate('deepseek-v3.2', 'c600', 'inference-xlong', 'FP16');
+    const result = calculate('deepseek-v3.2', 'c600', 'sla-5', 'FP16');
     // MLA: KV=61×576×262144×2/(1024^3)≈17.2 GB (vs standard ~990 GB)
     assert.ok(result.formula.includes('mla'));
   });
 
   it('DeepSeek V4 Flash + C600 + 超长上下文 256K → HCA extreme savings', () => {
-    const result = calculate('deepseek-v4-flash', 'c600', 'inference-xlong', 'FP16');
+    const result = calculate('deepseek-v4-flash', 'c600', 'sla-5', 'FP16');
     // HCA: KV=4176×262144×2/(1024^3)≈2.04 GB
     assert.ok(result.formula.includes('hca_mla'));
     assert.ok(result.cards >= 4 && result.cards <= 6,
@@ -767,21 +770,21 @@ describe('calculate with long-context presets', () => {
 // ──────────────────────────────────────────────
 describe('boundary & regression', () => {
   it('utilization rate approaches 1.0 when model barely fits', () => {
-    const result = calculate('qwen3.6-27b', 'c600', 'inference-standard', 'FP16');
+    const result = calculate('qwen3.6-27b', 'c600', 'sla-1', 'FP16');
     assert.ok(result.utilization > 0 && result.utilization <= 1,
       `utilization=${result.utilization} out of range`);
   });
 
   it('cards always ≥ 1 even for smallest model on largest GPU', () => {
-    const result = calculate('qwen3.5-0.8b', 'c600', 'inference-light', 'INT4');
+    const result = calculate('qwen3.5-0.8b', 'c600', 'sla-1', 'INT4');
     assert.equal(result.cards, 1);
   });
 
   it('servers = ceil(cards / cardsPerServer) for all GPU types', () => {
     const testCases = [
-      { model: 'kimi-k3', gpu: 'n300', preset: 'inference-standard', prec: 'FP16' },
-      { model: 'deepseek-v3.2', gpu: 'c600', preset: 'inference-standard', prec: 'FP16' },
-      { model: 'glm-5.2', gpu: 'n300', preset: 'inference-light', prec: 'FP16' },
+      { model: 'kimi-k3', gpu: 'n300', preset: 'sla-1', prec: 'FP16' },
+      { model: 'deepseek-v3.2', gpu: 'c600', preset: 'sla-1', prec: 'FP16' },
+      { model: 'glm-5.2', gpu: 'n300', preset: 'sla-1', prec: 'FP16' },
     ];
     for (const { model, gpu, preset, prec } of testCases) {
       const result = calculate(model, gpu, preset, prec);
@@ -793,7 +796,7 @@ describe('boundary & regression', () => {
   });
 
   it('modelMemoryGB breakdown sums correctly', () => {
-    const result = calculate('deepseek-r1-distill-llama-70b', 'n300', 'inference-standard', 'FP16');
+    const result = calculate('deepseek-r1-distill-llama-70b', 'n300', 'sla-1', 'FP16');
     const { weightGB, kvCacheGB, otherGB, totalGB } = result.modelMemoryGB;
     const sum = round2(weightGB + kvCacheGB + otherGB);
     assert.equal(sum, totalGB,
@@ -803,7 +806,7 @@ describe('boundary & regression', () => {
   it('modelMemoryGB breakdown sum is consistent for all 30 models', () => {
     const models = getAvailableModels();
     for (const m of models) {
-      const result = calculate(m.id, 'n300', 'inference-standard', 'FP16');
+      const result = calculate(m.id, 'n300', 'sla-1', 'FP16');
       const { weightGB, kvCacheGB, otherGB, totalGB } = result.modelMemoryGB;
       const sum = round2(weightGB + kvCacheGB + otherGB);
       assert.equal(sum, totalGB,
@@ -831,7 +834,7 @@ describe('boundary & regression', () => {
       { id: 'deepseek-v4-pro', arch: 'hca_mla' },
     ];
     for (const { id, arch } of archTests) {
-      const result = calculate(id, 'c600', 'inference-standard', 'FP16');
+      const result = calculate(id, 'c600', 'sla-1', 'FP16');
       assert.ok(result.formula.includes(arch),
         `${id}: formula should mention '${arch}', got:\n${result.formula}`);
     }
