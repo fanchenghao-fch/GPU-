@@ -3,7 +3,7 @@
  *
  * 运行方式：node --test calculator/index.test.js
  *
- * 当前覆盖：30 款模型（6 家厂商）× 2 款 GPU × 7 个 SLA 预设 × 7 种精度
+ * 当前覆盖：29 款模型（6 家厂商）× 2 款 GPU × 7 个 SLA 预设 × 7 种精度
  */
 
 import { describe, it } from 'node:test';
@@ -569,9 +569,9 @@ describe('consistency', () => {
     }
   });
 
-  it('all 30 models have architecture params for KV cache', () => {
+  it('all 29 models have architecture params for KV cache', () => {
     const models = getAvailableModels();
-    assert.equal(models.length, 30, `expected 30 models, got ${models.length}`);
+    assert.equal(models.length, 29, `expected 29 models, got ${models.length}`);
     for (const m of models) {
       assert.ok(m.numLayers > 0, `${m.id}: numLayers must be > 0`);
       assert.ok(m.hiddenDim > 0, `${m.id}: hiddenDim must be > 0`);
@@ -803,7 +803,7 @@ describe('boundary & regression', () => {
       `${weightGB} + ${kvCacheGB} + ${otherGB} = ${sum} ≠ totalGB=${totalGB}`);
   });
 
-  it('modelMemoryGB breakdown sum is consistent for all 30 models', () => {
+  it('modelMemoryGB breakdown sum is consistent for all 29 models', () => {
     const models = getAvailableModels();
     for (const m of models) {
       const result = calculate(m.id, 'n300', 'sla-1', 'FP16');
@@ -814,13 +814,13 @@ describe('boundary & regression', () => {
     }
   });
 
-  it('getSelectOptions returns all required keys with 30 models', () => {
+  it('getSelectOptions returns all required keys with 29 models', () => {
     const opts = getSelectOptions();
     assert.ok(Array.isArray(opts.models));
     assert.ok(Array.isArray(opts.gpus));
     assert.ok(Array.isArray(opts.presets));
     assert.ok(Array.isArray(opts.precisions));
-    assert.equal(opts.models.length, 30, `expected 30 models, got ${opts.models.length}`);
+    assert.equal(opts.models.length, 29, `expected 29 models, got ${opts.models.length}`);
     assert.equal(opts.gpus.length, 2, `expected 2 GPUs, got ${opts.gpus.length}`);
     assert.ok(opts.precisions.length >= 6);
   });

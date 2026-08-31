@@ -39,7 +39,7 @@ GPU 卡数计算器是一个轻量级 Web 工具，面向销售人员快速估�
 │   ├── index.test.js                   # 103 项自动化测试
 │   ├── constants/
 │   │   ├── gpu-data.js                 # GPU 产品常量（2 款：N300 / C600）
-│   │   ├── model-data.js               # 模型常量（30 个，覆盖 6 种注意力架构）
+│   │   ├── model-data.js               # 模型常量（29 个，覆盖 6 种注意力架构）
 │   │   └── precision.js                # 精度常量（7 种：FP32→INT4）
 │   ├── formulas/
 │   │   ├── model-memory.js             # 模型显存计算（权重 + KV Cache + 其他）
@@ -210,15 +210,15 @@ utilization = totalGB / (cards × singleGPUUsableGB)
 | n300 | N300 | 48 GB | 16 | 0.97 | 0.90 | 41.90 GB |
 | c600 | C600 | 144 GB | 8 | 0.97 | 0.90 | 125.71 GB |
 
-### 4.3 模型库（30 个）
+### 4.3 模型库（29 个）
 
 按注意力架构分类：
 
 | 架构类型 | 数量 | 代表模型 |
 |----------|------|----------|
-| standard (标准 GQA) | 17 | R1-Distill 系列, Qwen3-235B, GLM-4.5/4.5-Air, Hunyuan-A13B, Hy3 |
-| mla (Multi-head Latent Attention) | 4 | DeepSeek-V3.2, DeepSeek-V4.1, Kimi-K2.6, GLM-5.1/5.2 |
-| linear_hybrid (混合线性注意力) | 6 | MiniMax-M1/M2.5/M2.7/M3, Qwen3.5 系列, Qwen3.6 系列 |
+| standard (标准 GQA) | 10 | R1-Distill 系列, Qwen3-235B, GLM-4.5/4.5-Air, Hunyuan-A13B, Hy3 |
+| mla (Multi-head Latent Attention) | 4 | DeepSeek-V3.2, Kimi-K2.6, GLM-5.1/5.2 |
+| linear_hybrid (混合线性注意力) | 12 | MiniMax-M1/M2.5/M2.7/M3, Qwen3.5 系列, Qwen3.6 系列 |
 | kda_mla (KDA + Gated MLA) | 1 | Kimi K3 |
 | hca_mla (HCA + MLA) | 2 | DeepSeek V4 Flash, V4 Pro |
 

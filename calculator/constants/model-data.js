@@ -4,7 +4,7 @@
  * ⚠️ 维护说明（产品部同事）：
  * 新主流模型发布时，在 MODEL_DATA 数组中新增一条记录即可。
  *
- * 当前覆盖：阿里云/通义千问、DeepSeek、智谱AI/Z.ai、MiniMax、月之暗面、腾讯（6家厂商，30款模型）
+ * 当前覆盖：阿里云/通义千问、DeepSeek、智谱AI/Z.ai、MiniMax、月之暗面、腾讯（6家厂商，29款模型）
  *
  * 字段说明：
  * - id:              内部标识
@@ -32,7 +32,7 @@
  *              适用于 Llama、Qwen2/3、R1-Distill、GLM4、Hunyuan Dense 等标准 GQA 模型
  *
  *   mla:       KV Cache = numLayers × (kvLoraRank + qkRopeHeadDim) × contextLen × batchSize × bytesPerKV
- *              适用于 DeepSeek-V2/V3/R1/V4.1、GLM-5.x、Kimi-K2.6 等 MLA 模型
+ *              适用于 DeepSeek-V2/V3/R1、GLM-5.x、Kimi-K2.6 等 MLA 模型
  *              注意：没有 ×2，因为 K 和 V 被压缩为一个联合隐向量
  *
  *   cla:       KV Cache = 2 × (numLayers / claShareFactor) × numKVHeads × headDim × contextLen × batchSize × bytesPerKV
@@ -302,21 +302,6 @@ export const MODEL_DATA = [
     effectiveKVDim: 6000,
     available: true,
     note: 'HCA+MLA，384 专家；effectiveKVDim 基于 V4 Flash 压缩比(~10.5×)推算(62464/10.5≈5949→6000)，HF 核实基础参数',
-  },
-  {
-    id: 'deepseek-v4.1',
-    displayName: 'DeepSeek-V4.1（671B-A47B）',
-    paramsB: 671,
-    architecture: 'moe',
-    attnArch: 'mla',
-    numLayers: 61,
-    hiddenDim: 7168,
-    numKVHeads: 128,
-    headDim: 128,
-    kvLoraRank: 512,
-    qkRopeHeadDim: 64,
-    available: true,
-    note: 'V3.2 后继版本，激活参数提升至 47B，MLA 架构',
   },
 
   // ═══════════════════════════════════════════════════════════════════
