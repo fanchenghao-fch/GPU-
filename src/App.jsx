@@ -15,6 +15,15 @@ export default function App() {
         >
           沪ICP备2026042468号-1
         </a>
+        <span className="mx-2">|</span>
+        <a
+          href="https://beian.mps.gov.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-slate-700 transition-colors"
+        >
+          沪公网安备31012102000212号
+        </a>
       </footer>
     </div>
   );
