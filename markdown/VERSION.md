@@ -1,8 +1,8 @@
 # GPU 卡数计算器 — 版本说明
 
-> 版本：v1.1.0  
-> 日期：2026-08-10  
-> 状态：生产就绪（Vercel 已部署）
+> 版本：v1.2.0  
+> 日期：2026-09-04  
+> 状态：生产就绪（腾讯云 COS + 自定义域名已部署，ICP/公安备案完成）
 
 ---
 
@@ -12,7 +12,8 @@ GPU 卡数计算器是一个轻量级 Web 工具，面向销售人员快速估�
 
 **核心公式**：`卡数 = ceil(模型所需显存 / 单卡可用显存)`
 
-- 部署地址：[https://gpu-card-calculator.vercel.app](https://gpu-card-calculator.vercel.app)
+- 国内部署：[https://gpu-calculator.online](https://gpu-calculator.online)（腾讯云 COS，已完成 ICP + 公安备案）
+- 国际部署：[https://gpu-card-calculator.vercel.app](https://gpu-card-calculator.vercel.app)
 - 仓库地址：[https://github.com/fanchenghao-fch/GPU-](https://github.com/fanchenghao-fch/GPU-)
 
 ---
@@ -26,11 +27,11 @@ GPU 卡数计算器是一个轻量级 Web 工具，面向销售人员快速估�
 | UI 框架 | React | 18.3 |
 | CSS | Tailwind CSS | 3.4 |
 | 测试 | Node.js 原生 test runner | — |
-| 部署 | Vercel | — |
+| 部署 | 腾讯云 COS（国内）/ Vercel（国际） | — |
 
 ---
 
-## 三、文件清单（25 个源文件）
+## 三、文件清单（31 个文件）
 
 ```
 项目根目录/
@@ -49,7 +50,7 @@ GPU 卡数计算器是一个轻量级 Web 工具，面向销售人员快速估�
 ├── src/                                # UI 层（React + Tailwind）
 │   ├── main.jsx                        # ReactDOM 入口
 │   ├── index.css                       # Tailwind directives
-│   ├── App.jsx                         # 根组件：居中布局
+│   ├── App.jsx                         # 根组件：居中布局 + 备案号页脚
 │   ├── hooks/
 │   │   └── useCalculator.js            # 状态管理 hook（useState + useMemo）
 │   └── components/
@@ -58,15 +59,22 @@ GPU 卡数计算器是一个轻量级 Web 工具，面向销售人员快速估�
 │       ├── ResultCard.jsx              # 结果面板（卡数/服务器/利用率）
 │       ├── MemoryBreakdown.jsx         # 显存明细柱状图
 │       └── FormulaSteps.jsx            # 计算步骤编号列表
+├── scripts/                            # 部署脚本
+│   ├── deploy-cos.mjs                  # 构建 + 上传到腾讯云 COS（npm run deploy:cos）
+│   └── cos.env.example                 # COS 配置模板（cos.env 已被 .gitignore 忽略）
+├── markdown/                           # 文档
+│   ├── VERSION.md                      # 本文件（版本说明）
+│   ├── ui-design.md                    # UI 层设计文档（参考）
+│   ├── 国内部署-COS.md                 # 腾讯云 COS 国内部署手册
+│   └── 本地部署大模型SLA.md            # 本地部署大模型服务等级（SLA）参考
 ├── index.html                          # Vite 入口 HTML
 ├── vite.config.js                      # Vite 配置（@calculator 别名）
 ├── tailwind.config.js                  # Tailwind 配置
 ├── postcss.config.js                   # PostCSS 配置
 ├── vercel.json                         # Vercel 部署配置
 ├── package.json                        # 项目元信息与脚本
-├── .gitignore                          # Git 忽略规则
-├── ui-design.md                        # UI 层设计文档（参考）
-└── VERSION.md                          # 本文件
+├── package-lock.json                   # 依赖锁定文件
+└── .gitignore                          # Git 忽略规则
 ```
 
 ---
@@ -311,7 +319,7 @@ App (min-h-screen, items-start, justify-center)
 | 端到端 calculate() | 16 | 覆盖所有 6 种架构 + 2 款 GPU |
 | SLA 预设 | 13 | 7 预设校验 + 排序 + 批次 |
 | 新预设端到端 | 6 | 128K/256K + 各架构长上下文 |
-| 边界条件与回归 | 9 | 利用率/服务器/显存一致性/30 模型全量 |
+| 边界条件与回归 | 9 | 利用率/服务器/显存一致性/29 模型全量 |
 | 一致性检查 | 8 | 线性缩放 + 字段完整性 |
 | **合计** | **103** | |
 
@@ -321,12 +329,16 @@ App (min-h-screen, items-start, justify-center)
 
 | 项目 | 详情 |
 |------|------|
-| 平台 | Vercel |
-| 地址 | [https://gpu-card-calculator.vercel.app](https://gpu-card-calculator.vercel.app) |
+| 国内平台 | 腾讯云 COS 静态网站托管 |
+| 国内地址 | [https://gpu-calculator.online](https://gpu-calculator.online)（自定义域名） |
+| 国际平台 | Vercel |
+| 国际地址 | [https://gpu-card-calculator.vercel.app](https://gpu-card-calculator.vercel.app) |
+| 部署命令 | `npm run deploy:cos`（构建 + 上传，可选 `--delete` 清理远端） |
 | 构建命令 | `npm run build` |
 | 输出目录 | `dist` |
 | 框架 | 无（静态 SPA） |
-| 自动部署 | 待手动连接 GitHub |
+| ICP 备案号 | 沪ICP备2026042468号-1 |
+| 公安备案号 | 沪公网安备31012102000212号 |
 
 ---
 
@@ -338,7 +350,19 @@ App (min-h-screen, items-start, justify-center)
 | `040c18c` | 2026-08-09 | 文档 — UI 层设计方案（ui-design.md） |
 | `dab9a3c` | 2026-08-09 | 实现 — React + Vite + Tailwind 毛玻璃风格 UI（5 组件 + 1 hook） |
 | `477804c` | 2026-08-09 | 维护 — 添加 .vercel 到 .gitignore |
-| `e165bac` | 2026-08-10 | 修复 — HF config.json 全量核验，修正 12 款模型参数（层数/hiddenDim/KV heads 等）；模型库扩充至 30 款 |
+| `d8d395d` | 2026-08-10 | 文档 — 添加 VERSION.md 全量版本说明 |
+| `3eb7e53` | 2026-08-10 | 数据 — 置换为 6 家国产厂商 30 款模型 + 型号（参数量）显示格式 |
+| `e165bac` | 2026-08-10 | 修复 — 依 HF config.json 全量核验，修正 12 款模型参数 |
+| `d6fe6b4` | 2026-08-10 | 文档 — 更新 VERSION.md 至 v1.1.0 |
+| `4364531` | 2026-08-10 | 文档 — VERSION.md 新增 4.1 计算公式章节 |
+| `d21302a` | 2026-08-11 | 维护 — 文档迁移至 markdown/ 目录 |
+| `b03631a` | 2026-08-11 | 维护 — .gitignore 添加 *.xlsx |
+| `4f50735` | 2026-08-12 | 功能 — SLA 预设按《本地部署大模型服务等级》重构 |
+| `22b2130` | 2026-08-12 | 文档 — 添加本地部署大模型服务等级（SLA）参考文档 |
+| `01e4f94` | 2026-08-13 | 功能 — 新增腾讯云 COS 国内部署（静态托管 + 部署脚本） |
+| `60d990d` | 2026-08-31 | 功能 — 删除模型列表中的 deepseek-v4.1 选项（模型总数 30→29） |
+| `e0d699d` | 2026-08-31 | 功能 — 网站底部悬挂 ICP 备案号 |
+| `b21f5c2` | 2026-09-04 | 功能 — 网站底部悬挂公安备案号 |
 
 ---
 
